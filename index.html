@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <style>
+        .add {
+            width: 100%;
+            height: 30px;
+            border: 1px solid #000;
+            box-sizing: border-box;
+            text-align: center;
+            line-height: 30px;
+            cursor: pointer;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .wait {
+            width: 10px;
+            height: 30px;
+            background: #000;
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            animation: wait .5s linear alternate infinite .3s;
+            display: none;
+
+        }
+
+        .wait:before {
+            content: "";
+            width: 10px;
+            height: 30px;
+            background: #000;
+            position: absolute;
+            left: -20px;
+            animation: wait .5s linear alternate infinite;
+
+        }
+
+        .wait:after {
+            content: "";
+            width: 10px;
+            height: 30px;
+            background: #000;
+            position: absolute;
+            left: 20px;
+            animation: wait .5s linear alternate infinite .4s;
+
+        }
+
+        @keyframes wait {
+            0% {
+                transform: scale(1, 1);
+            }
+            100% {
+                transform: scale(1, 1.5);
+            }
+        }
+
+        td, th {
+            border: 1px solid red;
+        }
+
+
+    </style>
+    <script src="js/jquery.js"></script>
+
+</head>
+<body>
+<div class="container">
+    <table class="table table-bordered">
+        <tr>
+            <th>id</th>
+            <th>名字</th>
+            <th>年龄</th>
+            <th>性别</th>
+            <th>班级</th>
+            <th>操作</th>
+        </tr>
+
+    </table>
+    <div class="add">+</div>
+</div>
+<div class="wait"></div>
+<script>
+
+    $(function () {
+        //1. 获取数据
+        $(".wait").css("display", "block")
+        $.ajax({
+            url: "php/select.php",
+            success: function (e) {
+                var datas = JSON.parse(e);
+                var sex = ""
+                for (var i = 0; i < datas.length; i++) {
+                    sex = datas[i].sex == 1 ? "男" : "女";
+                    $(`<tr idval="${datas[i].id}"><td attr="id" class="other">${datas[i].id}</td><td attr="name">${datas[i].name || ""}</td><td attr="age">${datas[i].age || ""}</td><td attr="sex">${sex}</td><td attr="classes">${datas[i].classes || ""}</td><td class="other">
+
+   <span idval=${datas[i].id}>删除</span>
+</td></tr>`).appendTo("table")
+                }
+                $(".wait").css("display", "none")
+            }
+        })
+
+
+        //2. 添加数据
+        //a. 到数据库里面添加一条数据
+
+        $(".add").click(function () {
+            $(".wait").css("display", "block")
+            $.ajax({
+                url: "php/add.php",
+                success: function (e) {
+
+                    if (e != "error") {
+                        $(`<tr idval="${e}"><td attr="id" class="other">${e}</td><td attr="name"></td><td attr="age"></td><td attr="sex"></td><td attr="classes"></td><td class="other"><span idval=${e}>删除</span></td></tr>`).appendTo("table")
+                    }
+
+                    $(".wait").css("display", "none")
+                }
+
+            })
+        })
+
+        //3. 删除
+
+        $("table").on("click", "span", function () {
+            $(".wait").css("display", "block")
+            var id = $(this).attr("idval");
+            $.ajax({
+                url: "php/del.php",
+                data: "id=" + id,
+                success: (e) => {
+                    if (e == "ok") {
+                        $(this).parents("tr").remove();
+
+                        $(".wait").css("display", "none")
+                    }
+                }
+            })
+        })
+
+        //4. 编辑
+
+        $("table").on("dblclick", "td:not(.other)", function () {
+
+            var old = $(this).html()
+            $(this).html("")
+            var input = $("<input type='text' value='" + old + "'>");
+            $(this).append(input)
+            input.focus()
+
+            input.blur( ()=> {
+                var newval = input.val()
+                var datas = "id=" + $(this).parent().attr("idval") + "&attr=" + $(this).attr("attr") + "&val=" + newval;
+
+                $.ajax({
+                    url: "php/edit.php",
+                    data: datas,
+                    success: (e) => {
+                        if (e == "ok") {
+                            alert("修改成功")
+                        }
+                        input.remove()
+                        $(this).html(newval)
+
+                    }
+                })
+            })
+
+
+        })
+
+
+    })
+</script>
+</body>
+</html>
